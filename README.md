@@ -1,0 +1,1 @@
+# isocategorical-group-structure
