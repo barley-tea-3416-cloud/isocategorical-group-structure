@@ -1,21 +1,23 @@
+# Load the SONATA package.
 LoadPackage("sonata");
 
-#与えられた群に対してそれぞれの要素の位数をリストとして返す。
+
+# Returns a list containing the orders of all elements in the given group x.
 Orders := function(x)
- local p;
- p := List(Elements(x), i -> Order(i));
- return p;
- end;
-
-#与えられた位数の群を全探索し、それぞれの群について Orders を計算する。
-OrderLists:= function(n)
- local all,s;
- all := AllSmallGroups(n);
- s := List(all, i->[Orders(i), StructureDescription(i)]);
- return s;
- end;
+  local p;
+  p := List(Elements(x), i -> Order(i));
+  return p;
+end;
 
 
+# Iterates through all groups of a given order n to compute their element orders.
+# Returns a list of pairs: [Element Orders List, Group Structure Description].
+OrderLists := function(n)
+  local all, s;
+  all := AllSmallGroups(n);
+  s := List(all, i -> [Orders(i), StructureDescription(i)]);
+  return s;
+end;
 
 #位数リストにその数字が何個あるか数える。
 Count := function(n,list)
