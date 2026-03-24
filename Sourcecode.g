@@ -19,103 +19,125 @@ OrderLists := function(n)
   return s;
 end;
 
-#位数リストにその数字が何個あるか数える。
-Count := function(n,list)
- local number,j;
- number := 0;
- for j in list do
- if j=n then
- number := number +1;
- fi;
- od;
- return number;
- end;
+
+# Counts the occurrences of a specific value n within a given list.
+# This utility helps in analyzing the frequency of element orders in a group.
+Count := function(n, list)
+  local number, j;
+  number := 0;
+  for j in list do
+    if j = n then
+      number := number + 1;
+    fi;
+  od;
+  return number;
+end;
 
 
-#与えられた群の位数リストを計算する。
+# Computes the frequency profile of element orders for a given group G.
+# Specifically, it counts elements of orders 2^0, 2^1, ..., 2^6 and 
+# returns them as a list [1, count(2), count(4), ..., count(64)].
 OrderListGroup := function(G)
-local list,i,wantlist;
-list:=Orders(G);
-wantlist:=[1];
-
-for i in [2..7] do
-wantlist[i]:=Count(2^(i-1),list);
-od;
-
-return wantlist;
+  local list, i, wantlist;
+  list := Orders(G);
+  wantlist := [1];
+  for i in [2..7] do
+    wantlist[i] := Count(2^(i-1), list);
+  od;
+  return wantlist;
 end;
 
 
-
-#OrderLists で得たデータに対して、特定位数の個数を数える。見やすくするためリストは解除し、改行して出力。
+# Processes group data from OrderLists and displays the frequency of element orders.
+# Each line outputs [StructureDescription, [Count(1), Count(2), ..., Count(n)]]
+# where only divisors of n are recorded in the count list for clarity.
 WantListView := function(n)
- local glists,pop,want,gg,k,yy,space;
- want:= [];
- glists:= OrderLists(n);
- for gg in glists do
- space:=[];
- pop := [gg[2],space];
- for k in [1..n] do
- if Count(k,gg[1])>0 then
- Add(space,Count(k,gg[1]));
- elif Lcm(k,n)=n  then
- Append(space,[0]);
- fi;
- od;
- Add(want,pop);
- od;
- for yy in want do
- Print(yy,"\n");
- od;
- end;
+  local glists, pop, want, gg, k, yy, space;
+  want := [];
+  glists := OrderLists(n);
 
-#WantListView の計算用。
+  for gg in glists do
+    space := [];
+    pop := [gg[2], space];
+    for k in [1..n] do
+      if Count(k, gg[1]) > 0 then
+        Add(space, Count(k, gg[1]));
+      elif Lcm(k, n) = n then
+        Append(space, [0]);
+      fi;
+    od;
+    Add(want, pop);
+  od;
+
+  for yy in want do
+    Print(yy, "\n");
+  od;
+end;
+
+
+# Similar to WantListView, this function computes the distribution of 
+# element orders for all groups of order n, but returns the results 
+# as a list for further computational processing instead of printing.
 WantList := function(n)
- local glists,pop,want,gg,k,yy,space;
- want:= [];
- glists:= OrderLists(n);
- for gg in glists do
- space:=[];
- pop := [gg[2],space];
- for k in [1..n] do
- if Count(k,gg[1])>0 then
- Add(space,Count(k,gg[1]));
- elif Lcm(k,n)=n  then
- Append(space,[0]);
- fi;
- od;
- Add(want,pop);
- od;
- return want;
- end;
+  local glists, pop, want, gg, k, yy, space;
+  want := [];
+  glists := OrderLists(n);
+
+  for gg in glists do
+    space := [];
+    pop := [gg[2], space];
+    for k in [1..n] do
+      if Count(k, gg[1]) > 0 then
+        Add(space, Count(k, gg[1]));
+      elif Lcm(k, n) = n then
+        Append(space, [0]);
+      fi;
+    od;
+    Add(want, pop);
+  od;
+
+  return want;
+end;
 
 
-#与えられた位数の群に対して、考え得る全ての位数リストを得る。
+# Retrieves the set of all unique element order lists that appear among 
+# groups of a given order n. This identifies all possible "isocategorical 
+# profiles" for the specified order.
 OrderUnion := function(n)
-local wlist,ss,tut,final;
-wlist := WantList(n);
-tut:= [];
-for ss in wlist do
-Add(tut,ss[2]);
-od;
-final := Set(tut);
-return final;
+  local wlist, ss, tut, final;
+  wlist := WantList(n);
+  tut := [];
+
+  for ss in wlist do
+    Add(tut, ss[2]);
+  od;
+
+  final := Set(tut);
+  return final;
 end;
 
-#与えられた位数リストと同じものを持つ群を集める。
-SmallCategory := function(n,olist)
-local wlist,s,k,pp,qq;
-wlist := WantList(n);
-s:= Number(wlist);
-qq := [olist];
-for k in [1..s] do
-pp := wlist[k];
-if olist in pp then
-Add(qq,pp[1]);
-fi;
-od;
-return qq;
+
+# Aggregates all groups of order n that share a specific element order list (olist).
+# Returns a list starting with the target olist, followed by the 
+# StructureDescriptions of all matching groups in the Small Groups library.
+SmallCategory := function(n, olist)
+  local wlist, s, k, pp, qq;
+
+  wlist := WantList(n);
+  s := Number(wlist);
+  qq := [olist];
+
+  for k in [1..s] do
+    pp := wlist[k];
+    # Checks if the provided olist matches the element order profile of the group.
+    if olist in pp then
+      Add(qq, pp[1]);
+    fi;
+  od;
+
+  return qq;
 end;
+
 
 #全ての位数リストで SmallCategory を行う。閲覧用。
 CategoryView := function(n)
