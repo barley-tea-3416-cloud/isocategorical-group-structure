@@ -727,316 +727,387 @@ Eta_C2xC2 := function(N, g, h)
 end;
 
 
-
-#C4xC4に同型な部分群Nに対し、(1,0)と(0,1)に対応する元を抜き出す
+# Argument: N (a subgroup isomorphic to C4xC4)
+# Purpose: Identifies the elements in N that correspond to the standard generators (groupp, groupq) of C4xC4
 C4xC4GeneratorsOfSubgroup := function(N)
-local iso,gen1,gen2;
-iso:= IsomorphismGroups(C4xC4,N);
-gen1:= Image(iso,groupp);
-gen2:= Image(iso,groupq);
-return [gen1,gen2];
+    local iso, gen1, gen2;
+    
+    # Compute an isomorphism from the reference group C4xC4 to the subgroup N
+    iso := IsomorphismGroups(C4xC4, N);
+    
+    # Map the reference generators (groupp, groupq) to their corresponding images in N
+    gen1 := Image(iso, groupp);
+    gen2 := Image(iso, groupq);
+    
+    # Return the pair of elements representing the (1,0) and (0,1) components in N
+    return [gen1, gen2];
 end;
 
 
-#GAP中でpとqの区別がつかない問題が発生中。これによりginvの値がまちまちになる。
-#これを回避するため、Gizumikosakiの結果を利用して一意に定める。
-#この試みは失敗している
+# Pick the 7th subgroup from the filtered list for Gizumikosaki
+N1 := ObtainedSubgroups(Gizumikosaki)[7];
 
-N1:=ObtainedSubgroups(Gizumikosaki)[7];
-homhom:=IsomorphismGroups(G,Gizumikosaki);
-elements:=Image(homhom,GeneratorsOfGroup(G)[3]);
-As:=[[1,0],[2,1]];
+# Compute the isomorphism between the abstract group G and the concrete group Gizumikosaki
+homhom := IsomorphismGroups(G, Gizumikosaki);
 
-Checkginv_C4xC4 := function(g,N)
-local i,j,m,n,list1,list2,gen1,gen2;
-gen1:= C4xC4GeneratorsOfSubgroup(N)[1];
-gen2:= C4xC4GeneratorsOfSubgroup(N)[2];
+# Map the 3rd generator of G (which is 's') to its corresponding element in Gizumikosaki
+elements := Image(homhom, GeneratorsOfGroup(G)[3]);
 
-for i in [0..3] do
-for j in [0..3] do
-if
-g * gen1 * g^-1 = gen1^i * gen2^j  then
-list1:=[i,j];
-fi;
-od;
-od;
+# Define a 2x2 matrix As, likely representing the action of 's' on N1
+As := [[1, 0], [2, 1]];
 
-for m in [0..3] do
-for n in [0..3] do
-if
-g * gen2 * g^-1 = gen1^m * gen2^n  then
-list2:=[m,n];
-fi;
-od;
-od;
-return [list1,list2];
+
+# Arguments: g (group element), N (subgroup isomorphic to C4xC4)
+# Purpose: Computes the 2x2 matrix representing the conjugation action of g on N
+Checkginv_C4xC4 := function(g, N)
+    local i, j, m, n, list1, list2, gen1, gen2;
+
+    # Retrieve basis generators for the subgroup N
+    gen1 := C4xC4GeneratorsOfSubgroup(N)[1];
+    gen2 := C4xC4GeneratorsOfSubgroup(N)[2];
+
+    # Find exponents i, j such that g*gen1*g^-1 = gen1^i * gen2^j
+    for i in [0..3] do
+        for j in [0..3] do
+            if g * gen1 * g^-1 = gen1^i * gen2^j then
+                list1 := [i, j];
+            fi;
+        od;
+    od;
+
+    # Find exponents m, n such that g*gen2*g^-1 = gen1^m * gen2^n
+    for m in [0..3] do
+        for n in [0..3] do
+            if g * gen2 * g^-1 = gen1^m * gen2^n then
+                list2 := [m, n];
+            fi;
+        od;
+    od;
+
+    # Return the coordinate matrix [list1, list2]
+    return [list1, list2];
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C4xC4)
+# Purpose: Checks if the conjugation action of G on N induces invertible matrices in GL(2, Z/4Z)
+CheckGinv_C4xC4 := function(G, N)
+    local want, list, g, check, k, i;
+    
+    # Retrieve the list of generators for group G
+    list := GeneratorsOfGroup(G);
+    want := [];
 
-#C4xC4に同型な部分群Nの埋め込みによる2-cocycleがG不変か調べる(OK)
-CheckGinv_C4xC4 := function(G,N)
-local want,list,g,check,k,i;
-list := GeneratorsOfGroup(G);
-want:=[];
+    # For each generator g, compute the 2x2 matrix representing the conjugation action on N
+    for g in list do
+        # Note: Results for G-invariance are consistent across Candidate 1 and 2
+        Add(want, Checkginv_C4xC4(g, N));
+    od;
 
-for g in list do
-Add(want,Checkginv_C4xC4(g,N));   #Candidate1,2でGinv性の結果は一致する
-od;
+    # Compute the determinant of each matrix and reduce it modulo 4
+    check := List(want, Determinant);
+    check := List(check, i -> i mod 4);
+    
+    # Extract the set of unique determinant values
+    check := Set(check);
 
-check:=List(want,Determinant);
-check:=List(check, i-> i mod 4);
-check:=Set(check);
-
-if check = [1] then
-Print(N," is G invariant.");
-
-else
-Print(N," is not G invariant.");
-fi;
+    # A matrix is invertible over Z/4Z if its determinant is 1 or 3 (units in Z/4Z)
+    # This specific check verifies if the determinants are strictly 1 mod 4
+    if check = [1] then
+        Print(N, " is G invariant.");
+    else
+        Print(N, " is not G invariant.");
+    fi;
 end;
 
 
-#C4xC4に同型な部分群Nの埋め込みによる2-cocycleがG不変か調べる(計算用)
-CheckGinv_C4xC4Cal := function(G,N)
-local want,list,g,check,k,i;
-list := GeneratorsOfGroup(G);
-want:=[];
+# Arguments: G (parent group), N (subgroup isomorphic to C4xC4)
+# Purpose: Returns 1 if the conjugation action of G on N results in determinants of 1 mod 4, else 0
+CheckGinv_C4xC4Cal := function(G, N)
+    local want, list, g, check, k, i;
+    
+    # Fetch generators of G and initialize list for conjugation matrices
+    list := GeneratorsOfGroup(G);
+    want := [];
 
-for g in list do
-Add(want,Checkginv_C4xC4(g,N));
-od;
+    # Iterate through generators of G to compute their action matrices on N
+    for g in list do
+        Add(want, Checkginv_C4xC4(g, N));
+    od;
 
-check:=List(want,Determinant);
-check:=List(check, i-> i mod 4);
-check:=Set(check);
+    # Compute determinants of all matrices and reduce them modulo 4
+    check := List(want, Determinant);
+    check := List(check, i -> i mod 4);
+    
+    # Identify unique determinant values
+    check := Set(check);
 
-if check = [1] then
-return 1;
-
-else
-return 0;;
-fi;
+    # Return 1 if the only unique determinant is 1, indicating G-invariance
+    if check = [1] then
+        return 1;
+    else
+        return 0;;
+    fi;
 end;
 
 
-#\eta(g,h)を定める。部分群Nでの\eta(g,h)の値はこれ。
-Eta_C4xC4 := function(N,g,h)
-local gen1,gen2,mat1,mat2,mat3,k,l,m,n,a,b,c,d,p,q,r,s,check1,check2,want1,want2;
+# Arguments: N (subgroup isomorphic to C4xC4), g, h (elements of G)
+# Purpose: Calculates the element eta(g, h) within the subgroup N for C4 x C4
+Eta_C4xC4 := function(N, g, h)
+    local gen1, gen2, mat1, mat2, mat3, k, l, m, n, a, b, c, d, p, q, r, s, check1, check2, want1, want2;
 
-gen1:= C4xC4GeneratorsOfSubgroup(N)[1];
-gen2:= C4xC4GeneratorsOfSubgroup(N)[2];
+    # Extract the basis generators for N
+    gen1 := C4xC4GeneratorsOfSubgroup(N)[1];
+    gen2 := C4xC4GeneratorsOfSubgroup(N)[2];
 
-mat1:=Checkginv_C4xC4(g,N);
-mat2:=Checkginv_C4xC4(h,N);
-mat3:=Checkginv_C4xC4(g*h,N);
+    # Obtain 2x2 conjugation matrices in Z/4Z
+    mat1 := Checkginv_C4xC4(g, N);
+    mat2 := Checkginv_C4xC4(h, N);
+    mat3 := Checkginv_C4xC4(g * h, N);
 
-k:=mat1[1][1];
-l:=mat1[1][2];
-m:=mat1[2][1];
-n:=mat1[2][2];
-a:=mat2[1][1];
-b:=mat2[1][2];
-c:=mat2[2][1];
-d:=mat2[2][2];
-p:=mat3[1][1];
-q:=mat3[1][2];
-r:=mat3[2][1];
-s:=mat3[2][2];
+    # Coefficients for g
+    k := mat1[1][1]; l := mat1[1][2];
+    m := mat1[2][1]; n := mat1[2][2];
 
+    # Coefficients for h
+    a := mat2[1][1]; b := mat2[1][2];
+    c := mat2[2][1]; d := mat2[2][2];
 
-check1:= -k*m -a*c*k^2 -b*d*m^2 -2*b*c*k*m +p*r;
-check2:= -l*n -a*c*l^2 -b*d*n^2 -2*b*c*l*n +q*s;
+    # Coefficients for g*h
+    p := mat3[1][1]; q := mat3[1][2];
+    r := mat3[2][1]; s := mat3[2][2];
 
-want1:= check1 /2;
-want2:= check2 /2;
+    # Algebraic transition formulas
+    check1 := -k*m - a*c*k^2 - b*d*m^2 - 2*b*c*k*m + p*r;
+    check2 := -l*n - a*c*l^2 - b*d*n^2 - 2*b*c*l*n + q*s;
 
-want1:=want1 mod 4;
-want2:=want2 mod 4;
+    # Exponent calculation (halving and reducing mod 4)
+    want1 := check1 / 2;
+    want2 := check2 / 2;
 
-return gen1^want1 * gen2^want2;  #群の要素そのものを出力するように改良
+    want1 := want1 mod 4;
+    want2 := want2 mod 4;
+
+    # Return the actual group element in N
+    return gen1^want1 * gen2^want2; 
 end;
 
 
-
-
-#Gの中で要素gが何番目のものなのか特定する。
-PickupElementNumber:=function(G,g)
-local elist,i,want;
-elist:=Elements(G);
-for i in [1..64] do
-if g = elist[i] then
-want:= i;
-fi;
-od;
-return want;
+# Arguments: G (a group), g (an element of G)
+# Purpose: Returns the index of element g within the set of all elements of G
+PickupElementNumber := function(G, g)
+    local elist, i, want;
+    
+    # Generate the ordered list of all elements in the group
+    elist := Elements(G);
+    
+    # Iterate through the first 64 elements to find a match
+    for i in [1..64] do
+        if g = elist[i] then
+            want := i;
+        fi;
+    od;
+    
+    return want;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C2xC2), g, h (elements of G)
+# Purpose: Computes the relation between lifted elements f[g], f[h], and f[eta*g*h]
+GomegaRelationsC2xC2 := function(G, N, g, h)
+    local m1, m2, m3, Eta, want, product;
 
-#C2xC2の埋め込みによるチルダgとチルダhの関係式。
-GomegaRelationsC2xC2 := function(G,N,g,h)
-local m1,m2,m3,Eta,want,product;
+    # 1. Calculate the eta element in the subgroup N
+    Eta := Eta_C2xC2(N, g, h);
 
-Eta:= Eta_C2xC2(N,g,h);
+    # 2. Determine the "corrected" product in G using the eta factor
+    product := Eta * g * h;
 
-product:= Eta * g * h ;
+    # 3. Identify the indices (positions) of g, h, and the product in the group G
+    m1 := PickupElementNumber(G, g);
+    m2 := PickupElementNumber(G, h);
+    m3 := PickupElementNumber(G, product);
 
-m1:= PickupElementNumber(G,g);
-m2:= PickupElementNumber(G,h);
-m3:= PickupElementNumber(G,product);
+    # 4. Formulate the relation: f[product] * f[h]^-1 * f[g]^-1
+    # This corresponds to the identity: f[g] * f[h] = f[Eta * g * h]
+    want := f[m3] * f[m2]^-1 * f[m1]^-1;
 
-want:=
-f[m3] * f[m2]^-1 *f[m1]^-1;
-
-return want;
+    return want;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C2xC2)
+# Purpose: Generates the full set of relations for the group extension
+AllGomegaRelationsC2xC2 := function(G, N)
+    local list, relation, g, h, elements_G;
 
-#C2xC2の埋め込みによるチルダgとチルダhの全ての関係式。
-AllGomegaRelationsC2xC2:= function(G,N)
-local list,relation,g,h;
+    list := [];
+    elements_G := Elements(G); # Pre-computing elements for efficiency
 
-list:=[];
-
-for g in Elements(G) do
-for h in Elements(G) do
-
-relation := GomegaRelationsC2xC2(G,N,g,h);
-Add(list,relation);
-
-od;od;
-return list;
+    for g in elements_G do
+        for h in elements_G do
+            # Compute the relation: f[eta*g*h] * f[h]^-1 * f[g]^-1 = 1
+            relation := GomegaRelationsC2xC2(G, N, g, h);
+            Add(list, relation);
+        od;
+    od;
+    
+    return list;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C2xC2)
+# Purpose: Generates all multiplication relations plus the order relations for the subgroup N
+FinalAllGomegaRelationsC2xC2 := function(G, N)
+    local want, element10, element01, number1, number2;
 
+    # 1. Get the 4,096 multiplication relations based on the cocycle eta
+    want := AllGomegaRelationsC2xC2(G, N);
 
-#FinalAllGomegaRelationsは最終的に自由群を割るイデアルを表す
+    # 2. Identify the specific elements in G that form the basis of N
+    element10 := C2xC2GeneratorsOfSubgroup(N)[1];
+    element01 := C2xC2GeneratorsOfSubgroup(N)[2];
 
-FinalAllGomegaRelationsC2xC2:= function(G,N)
+    # 3. Find their corresponding indices in the generator list f
+    number1 := PickupElementNumber(G, element10);
+    number2 := PickupElementNumber(G, element01);
 
-local want,element10,element01,number1,number2;
+    # 4. Add the order-2 relations (involutions) for these basis elements
+    # This forces f[number1]^2 = 1 and f[number2]^2 = 1 in the quotient group
+    Add(want, f[number1]^2);
+    Add(want, f[number2]^2);
 
-want:= AllGomegaRelationsC2xC2(G,N);
-
-element10:=C2xC2GeneratorsOfSubgroup(N)[1];
-element01:=C2xC2GeneratorsOfSubgroup(N)[2];
-
-number1:=PickupElementNumber(G,element10);
-number2:=PickupElementNumber(G,element01);
-
-Add(want,f[number1]^2);
-Add(want,f[number2]^2);
-
-return want;
-
+    return want;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C4xC4), g, h (elements of G)
+# Purpose: Computes the relation between lifted elements f[g], f[h], and f[eta*g*h] for C4 x C4
+GomegaRelationsC4xC4 := function(G, N, g, h)
+    local m1, m2, m3, Eta, want, product;
 
-#C4xC4の埋め込みによるチルダgとチルダhの関係式。
-GomegaRelationsC4xC4:= function(G,N,g,h)
-local m1,m2,m3,Eta,want,n1,n2,product;
+    # 1. Calculate the eta element specifically for C4 x C4
+    # This uses the check1/check2 logic and halving division previously defined
+    Eta := Eta_C4xC4(N, g, h);
 
-Eta:= Eta_C4xC4(N,g,h);
+    # 2. Compute the product in G modified by the cocycle value
+    product := Eta * g * h;
 
-product:= Eta * g * h ;
+    # 3. Identify indices of g, h, and the modified product
+    m1 := PickupElementNumber(G, g);
+    m2 := PickupElementNumber(G, h);
+    m3 := PickupElementNumber(G, product);
 
-m1:= PickupElementNumber(G,g);
-m2:= PickupElementNumber(G,h);
-m3:= PickupElementNumber(G,product);
+    # 4. Create the relation: f[product] = f[g] * f[h]
+    # Represented as: f[m3] * f[m2]^-1 * f[m1]^-1 = 1
+    want := f[m3] * f[m2]^-1 * f[m1]^-1;
 
-want:=
-f[m3] * f[m2]^-1 *f[m1]^-1;
-
-return want;
+    return want;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C4xC4)
+# Purpose: Generates the full set of 4,096 multiplication relations for the extension
+AllGomegaRelationsC4xC4 := function(G, N)
+    local list, relation, g, h, elements_G;
 
-#C4xC4の埋め込みによるチルダgとチルダhの全ての関係式。
-AllGomegaRelationsC4xC4 := function(G,N)
-local list,relation,g,h;
+    list := [];
+    elements_G := Elements(G); # Pre-calculating for speed
 
-list:=[];
-
-for g in Elements(G) do
-for h in Elements(G) do
-
-relation := GomegaRelationsC4xC4(G,N,g,h);
-Add(list,relation);
-
-od;od;
-return list;
+    for g in elements_G do
+        for h in elements_G do
+            # Compute the relation based on the C4xC4 cocycle
+            relation := GomegaRelationsC4xC4(G, N, g, h);
+            Add(list, relation);
+        od;
+    od;
+    
+    return list;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C4xC4)
+# Purpose: Generates multiplication relations and enforces the order-4 constraint on N
+FinalAllGomegaRelationsC4xC4 := function(G, N)
+    local want, element10, element01, number1, number2;
 
+    # 1. Collect the 4,096 multiplication relations based on the C4xC4 cocycle
+    want := AllGomegaRelationsC4xC4(G, N);
 
-#FinalAllGomegaRelationsは最終的に自由群を割るイデアルを表す
+    # 2. Extract the basis generators (p, q) for the subgroup N
+    element10 := C4xC4GeneratorsOfSubgroup(N)[1];
+    element01 := C4xC4GeneratorsOfSubgroup(N)[2];
 
-FinalAllGomegaRelationsC4xC4 := function(G,N)
+    # 3. Find the index positions of these generators within the group G
+    number1 := PickupElementNumber(G, element10);
+    number2 := PickupElementNumber(G, element01);
 
-local want,element10,element01,number1,number2;
+    # 4. Enforce the order of the generators: f[i]^4 = 1
+    # This ensures that the elements in the kernel have the correct period
+    Add(want, f[number1]^4);
+    Add(want, f[number2]^4);
 
-want:= AllGomegaRelationsC4xC4(G,N);
-
-element10:=C4xC4GeneratorsOfSubgroup(N)[1];
-element01:=C4xC4GeneratorsOfSubgroup(N)[2];
-
-number1:=PickupElementNumber(G,element10);
-number2:=PickupElementNumber(G,element01);
-
-Add(want,f[number1]^4);
-Add(want,f[number2]^4);
-
-return want;
-
+    return want;
 end;
 
 
+####################
+#Conctruction of Gw#
+####################
 
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C2xC2)
+# Purpose: Constructs the extension Gw, checks for isomorphisms, and returns a detailed status list
+GwStructureC2xC2 := function(G, N)
+    local Gw, Gfinal, orderlist, listnumber, v, isomorphicnumber;
 
+    # 1. Get the signature of the group based on the orders of its elements
+    orderlist := OrderListGroup(G);
+    
+    # 2. Determine how many groups of order 64 share this specific order profile
+    listnumber := Number(SmallCategory(64, orderlist));
 
+    # 3. Check if the conjugation action of G on N is valid (G-invariant)
+    if CheckGinv_C2xC2Cal(G, N) = 1 then
+        
+        # Construct the extension group using the previously defined 4,098 relations
+        # Note: 'Free64' must be defined globally as FreeGroup(64)
+        Gw := Free64 / FinalAllGomegaRelationsC2xC2(G, N);
+        
+        # Compare the new group Gw with the original group G
+        if IsIsomorphicGroup(G, Gw) then 
+            Gfinal := G;
+        else 
+            Gfinal := Gw; 
+        fi;
+        
+        # 4. Identify which specific group in your 'SmallCategory' Gw corresponds to
+        isomorphicnumber := 1; # Default initialization
+        for v in [2..listnumber] do
+            if IsIsomorphicGroup(Gw, SmallCategoryCal(64, orderlist)[v]) then
+                isomorphicnumber := v;
+            fi;
+        od;
 
+        # Return comprehensive data about the extension
+        return [
+            C2xC2GeneratorsOfSubgroup(N), 
+            StructureDescription(N), 
+            "G-inv", 
+            IsIsomorphicGroup(G, Gw), 
+            isomorphicnumber - 1, 
+            StructureDescription(Gfinal)
+        ];
 
-
-#Gw判定に使う関数たち
-
-GwStructureC2xC2:=function(G,N)
-
-local Gw,Gfinal,orderlist,listnumber,v,isomorphicnumber;
-
-orderlist:=OrderListGroup(G);
-listnumber:= Number(SmallCategory(64,orderlist));
-
-if CheckGinv_C2xC2Cal(G,N) = 1 then
- 
- Gw:= Free64 / FinalAllGomegaRelationsC2xC2(G,N);
- 
- if IsIsomorphicGroup(G,Gw) then Gfinal:=G;
- else Gfinal:=Gw; fi;
-   
-  for v in [2..listnumber] do
-  
-   if IsIsomorphicGroup(Gw,SmallCategoryCal(64,orderlist)[v]) then
-   
-   isomorphicnumber:=v;
-
-   fi;od;
-
- return [C2xC2GeneratorsOfSubgroup(N),StructureDescription(N),"G-inv",IsIsomorphicGroup(G,Gw),isomorphicnumber-1,StructureDescription(Gfinal)];
-
-else
-
- return [C2xC2GeneratorsOfSubgroup(N),StructureDescription(N),"not G-inv"];
-
-fi;
-
+    else
+        # If the conjugation action doesn't preserve the structure of N
+        return [
+            C2xC2GeneratorsOfSubgroup(N), 
+            StructureDescription(N), 
+            "not G-inv"
+        ];
+    fi;
 end;
 
 
