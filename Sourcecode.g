@@ -139,108 +139,150 @@ SmallCategory := function(n, olist)
 end;
 
 
-#全ての位数リストで SmallCategory を行う。閲覧用。
+# Executes SmallCategory for every unique element order list of order n.
+# This function prints a comprehensive list of all groups of order n,
+# categorized into subsets based on their isocategorical profiles.
 CategoryView := function(n)
-local unionlist,olist,smallc,LastFinal,yy;
-LastFinal:=[];
-unionlist := OrderUnion(n);
-for olist in unionlist do
-smallc := SmallCategory(n,olist);
-Add(LastFinal,smallc);
-od;
-for yy in LastFinal do
-Print(yy,"\n");
-od;
+  local unionlist, olist, smallc, LastFinal, yy;
+  LastFinal := [];
+  unionlist := OrderUnion(n);
+
+  for olist in unionlist do
+    # Retrieves all groups that match the current order list (olist).
+    smallc := SmallCategory(n, olist);
+    Add(LastFinal, smallc);
+  od;
+
+  # Displays each category on a new line for easier review.
+  for yy in LastFinal do
+    Print(yy, "\n");
+  od;
 end;
 
-#全ての位数リストで SmallCategory を行う。
+
+# Executes SmallCategory for every unique element order list of order n.
+# Returns a nested list where each entry contains an order list followed 
+# by the StructureDescriptions of all groups sharing that profile.
 Category := function(n)
-local unionlist,olist,smallc,LastFinal,yy;
-LastFinal:=[];
-unionlist := OrderUnion(n);
-for olist in unionlist do
-smallc := SmallCategory(n,olist);
-Add(LastFinal,smallc);
-od;
-return LastFinal;
+  local unionlist, olist, smallc, LastFinal, yy;
+  LastFinal := [];
+  unionlist := OrderUnion(n);
+
+  for olist in unionlist do
+    # For each unique order profile, aggregate all matching groups.
+    smallc := SmallCategory(n, olist);
+    Add(LastFinal, smallc);
+  od;
+
+  return LastFinal;
 end;
 
 
-
-#SmallCategoryCalは計算用に群のまま返してくれる。
+# Returns a list containing the orders of all elements in the given group x.
+# This serves as the fundamental calculation for identifying isocategorical groups.
 Orders := function(x)
- local p;
- p := List(Elements(x), i -> Order(i));
- return p;
- end;
-#与えられた位数の群を全探索し、それぞれの群について Orders を計算する。
-OrderListsCal:= function(n)
- local all,s;
- all := AllSmallGroups(n);
- s := List(all, i->[Orders(i), i]);
- return s;
- end;
-#位数リストにその数字が何個あるか数える。
-Count := function(n,list)
- local number,j;
- number := 0;
- for j in list do
- if j=n then
- number := number +1;
- fi;
- od;
- return number;
- end;
-#OrderLists で得たデータに対して、特定位数の個数を数える。見やすくするためリストは解除し、改行して出力。
+  local p;
+  p := List(Elements(x), i -> Order(i));
+  return p;
+end;
+
+
+# Iterates through all groups of order n and computes their element orders.
+# Returns a list of pairs: [Element Orders List, Group Object].
+# Unlike OrderLists, this returns the group object itself for further calculation.
+OrderListsCal := function(n)
+  local all, s;
+  all := AllSmallGroups(n);
+  s := List(all, i -> [Orders(i), i]);
+  return s;
+end;
+
+
+# Counts the number of times a specific integer n appears in a given list.
+# This helper function is used to build the frequency profile of element orders.
+Count := function(n, list)
+  local number, j;
+  number := 0;
+  for j in list do
+    if j = n then
+      number := number + 1;
+    fi;
+  od;
+  return number;
+end;
+
+
+# Unlike WantList, this function returns the actual Group Objects instead of 
+# structure strings, making it suitable for direct algebraic computations.
 WantListCal := function(n)
- local glists,pop,want,gg,k,yy,space;
- want:= [];
- glists:= OrderListsCal(n);
- for gg in glists do
- space:=[];
- pop := [gg[2],space];
- for k in [1..n] do
- if Count(k,gg[1])>0 then
- Add(space,Count(k,gg[1]));
- elif Lcm(k,n)=n  then
- Append(space,[0]);
- fi;
- od;
- Add(want,pop);
- od;
- return want;
- end;
-#与えられた位数の群に対して、考え得る全ての位数リストを得る。
+  local glists, pop, want, gg, k, yy, space;
+  want := [];
+  glists := OrderListsCal(n);
+
+  for gg in glists do
+    space := [];
+    # Pairs the group object (gg[2]) with its frequency list of element orders.
+    pop := [gg[2], space];
+    for k in [1..n] do
+      if Count(k, gg[1]) > 0 then
+        Add(space, Count(k, gg[1]));
+      elif Lcm(k, n) = n then
+        Append(space, [0]);
+      fi;
+    od;
+    Add(want, pop);
+  od;
+
+  return want;
+end;
+
+
+# Computes the set of all unique element order lists for groups of order n.
+# This identifies every distinct "order profile" possible for the given order,
+# using the group objects processed by WantListCal.
 OrderUnionCal := function(n)
-local wlist,ss,tut,final;
-wlist := WantListCal(n);
-tut:= [];
-for ss in wlist do
-Add(tut,ss[2]);
-od;
-final := Set(tut);
-return final;
-end;
-#与えられた位数リストと同じものを持つ群を集める。
-SmallCategoryCal := function(n,olist)
-local wlist,s,k,pp,qq;
-wlist := WantListCal(n);
-s:= Number(wlist);
-qq := [olist];
-for k in [1..s] do
-pp := wlist[k];
-if olist in pp then
-Add(qq,pp[1]);
-fi;
-od;
-return qq;
+  local wlist, ss, tut, final;
+  wlist := WantListCal(n);
+  tut := [];
+
+  for ss in wlist do
+    Add(tut, ss[2]);
+  od;
+
+  final := Set(tut);
+  return final;
 end;
 
 
-#64の生成元の自由群
-Free64:=FreeGroup(64);
+# Arguments: n (order), olist (target order list)
+# Purpose: Collects group identifiers (pp[1]) that share the same olist
+SmallCategoryCal := function(n, olist)
+    local wlist, s, k, pp, qq;
 
-f:=GeneratorsOfGroup(Free64);
+    # Fetch group data for order n and initialize results with olist
+    wlist := WantListCal(n);
+    s := Number(wlist);
+    qq := [olist];
+
+    # Iterate through each group entry pp in wlist
+    for k in [1..s] do
+        pp := wlist[k];
+        
+        # If olist is found in the entry pp, add the group's name/ID (pp[1])
+        if olist in pp then
+            Add(qq, pp[1]);
+        fi;
+    od;
+
+    return qq;
+end;
+
+
+# Create a free group with 64 generators
+Free64 := FreeGroup(64);
+
+# Extract the list of generators for the free group
+f := GeneratorsOfGroup(Free64);
 
 
 
