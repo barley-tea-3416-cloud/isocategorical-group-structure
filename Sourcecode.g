@@ -285,120 +285,132 @@ Free64 := FreeGroup(64);
 f := GeneratorsOfGroup(Free64);
 
 
+# Define a free group with 4 generators named x, y, s, and t
+F4 := FreeGroup("x", "y", "s", "t");
 
-#izumikosakiの群Gの構成
-F4 := FreeGroup("x","y","s","t");
+# Assign the generator names to global variables for use in expressions
 AssignGeneratorVariables(F4);
-G:= F4/
-[
-x^4,
-y^4,
-x*y*x^-1*y^-1,
-s^2,
-t^2,
-s*t*s^-1*t^-1,
-s*x*s^-1*x^-1,
-s*y*s^-1*y^-1*x^-2,
-t*x*t^-1*y^-2*x^-1,
-t*y*t^-1*y^-1
+
+# Define Izumi-Kosaki group G as the quotient of F4 by the specified relations
+G := F4 / [
+    x^4,
+    y^4,
+    x*y*x^-1*y^-1,
+    s^2,
+    t^2,
+    s*t*s^-1*t^-1,
+    s*x*s^-1*x^-1,
+    s*y*s^-1*y^-1*x^-2,
+    t*x*t^-1*y^-2*x^-1,
+    t*y*t^-1*y^-1
 ];
 
 
-#izumikosakiの群が属する位数グループの群たち
-izumigroups:=SmallCategoryCal(64,[1,19,44,0,0,0,0]);
-izumigroups:=izumigroups{[2..10]};
-Gizumikosaki:=izumigroups[5];
+# Identify groups of order 64 with the specific order profile [1, 19, 44, 0, 0, 0, 0]
+izumigroups := SmallCategoryCal(64, [1, 19, 44, 0, 0, 0, 0]);
+
+# Extract group identifiers from the 2nd to the 10th element (skipping the olist at index 1)
+izumigroups := izumigroups{[2..10]};
+
+# Pick the 5th group identifier from the sliced list
+Gizumikosaki := izumigroups[5];
 
 
-
-#sub2はGの部分群のうち位数平方数、正規、可換な部分群のリスト
-sub1:=[];
+# Initialize an empty list to store subgroups with specific orders
+sub1 := [];
 for i in Subgroups(G) do
-if Order(i)=4 or Order(i)=16 then
-Add(sub1,i);
-fi;
+    # Filter subgroups whose order is 4 or 16 (square numbers)
+    if Order(i) = 4 or Order(i) = 16 then
+        Add(sub1, i);
+    fi;
 od;
-sub2:=[];
+
+# Initialize an empty list for the final filtered subgroups
+sub2 := [];
 for i in sub1 do
-if IsAbelian(i) and IsNormal(G,i) then
-Add(sub2,i);
-fi;
+    # Filter for subgroups that are both abelian and normal in G
+    if IsAbelian(i) and IsNormal(G, i) then
+        Add(sub2, i);
+    fi;
 od;
 
-#C4xC4
-C4xC4:=AbelianGroup(IsFpGroup,[4,4]);
 
+# Construct the direct product of two cyclic groups of order 4 (C4 x C4)
+C4xC4 := AbelianGroup(IsFpGroup, [4, 4]);
 
-#C2xC2
-C2xC2:=AbelianGroup(IsFpGroup,[2,2]);
+# Construct the direct product of two cyclic groups of order 2 (C2 x C2)
+C2xC2 := AbelianGroup(IsFpGroup, [2, 2]);
 
 #C2xC2xC2xC2
-C2xC2xC2xC2:=FreeGroup("c","d","e","g");
+C2xC2xC2xC2 := FreeGroup("c", "d", "e", "g");
 AssignGeneratorVariables(C2xC2xC2xC2);
-C2xC2xC2xC2:=C2xC2xC2xC2/
-[
-c^2,
-d^2,
-e^2,
-g^2,
-c*d*c^-1*d^-1,
-c*e*c^-1*e^-1,
-c*g*c^-1*g^-1,
-d*e*d^-1*e^-1,
-d*g*d^-1*g^-1,
-e*g*e^-1*g^-1,
+C2xC2xC2xC2 := C2xC2xC2xC2 / [
+    c^2,
+    d^2,
+    e^2,
+    g^2,
+    c*d*c^-1*d^-1,
+    c*e*c^-1*e^-1,
+    c*g*c^-1*g^-1,
+    d*e*d^-1*e^-1,
+    d*g*d^-1*g^-1,
+    e*g*e^-1*g^-1
 ];
 
 
+# Assign generators of C4xC4 to groupp and groupq
+groupp := GeneratorsOfGroup(C4xC4)[1];
+groupq := GeneratorsOfGroup(C4xC4)[2];
 
-#C4xC4の2-cocycle（4つ）を構成する
-#groupp,groupqで生成元としてのp,qを表している
-#non-degなのはCocycle_C4xC4_1、Cocycle_C4xC4_3
-groupp:=GeneratorsOfGroup(C4xC4)[1];
-groupq:=GeneratorsOfGroup(C4xC4)[2];
-Cycle4x4:=function(g)
-local j,k;
-for j in [0..3] do
-for k in [0..3] do
-if g=groupp^j*groupq^k then
-return[j,k];
-fi;
-od;
-od;
+
+# Helper function to decompose element g into exponents [j, k] such that g = p^j * q^k
+Cycle4x4 := function(g)
+    local j, k;
+    for j in [0..3] do
+        for k in [0..3] do
+            if g = groupp^j * groupq^k then
+                return [j, k];
+            fi;
+        od;
+    od;
 end;
 
-Cocycle_C4xC4_0:=function(g,h)
-local want,list1,list2;
-list1:=Cycle4x4(g);
-list2:=Cycle4x4(h);
-want:= E(4)^(list1[1]*list2[2]*0);
-return want;
+
+# Trivial 2-cocycle (constant 1)
+Cocycle_C4xC4_0 := function(g, h)
+    local want, list1, list2;
+    list1 := Cycle4x4(g);
+    list2 := Cycle4x4(h);
+    want := E(4)^(list1[1] * list2[2] * 0);
+    return want;
 end;
 
-Cocycle_C4xC4_1:=function(g,h)
-local want,list1,list2;
-list1:=Cycle4x4(g);
-list2:=Cycle4x4(h);
-want:= E(4)^(list1[1]*list2[2]);
-return want;
+# Non-degenerate 2-cocycle (Standard bimultiplicative form)
+Cocycle_C4xC4_1 := function(g, h)
+    local want, list1, list2;
+    list1 := Cycle4x4(g);
+    list2 := Cycle4x4(h);
+    want := E(4)^(list1[1] * list2[2]);
+    return want;
 end;
 
-Cocycle_C4xC4_2:=function(g,h)
-local want,list1,list2;
-list1:=Cycle4x4(g);
-list2:=Cycle4x4(h);
-want:= E(4)^(list1[1]*list2[2]*2);
-return want;
+# 2-cocycle with exponent factor 2
+Cocycle_C4xC4_2 := function(g, h)
+    local want, list1, list2;
+    list1 := Cycle4x4(g);
+    list2 := Cycle4x4(h);
+    want := E(4)^(list1[1] * list2[2] * 2);
+    return want;
 end;
 
-Cocycle_C4xC4_3:=function(g,h)
-local want,list1,list2;
-list1:=Cycle4x4(g);
-list2:=Cycle4x4(h);
-want:= E(4)^(list1[1]*list2[2]*3);
-return want;
+# Non-degenerate 2-cocycle (Inverse of Cocycle_1)
+Cocycle_C4xC4_3 := function(g, h)
+    local want, list1, list2;
+    list1 := Cycle4x4(g);
+    list2 := Cycle4x4(h);
+    want := E(4)^(list1[1] * list2[2] * 3);
+    return want;
 end;
-
 
 
 #C2xC2の2-cocycle（2つ）を構成する
