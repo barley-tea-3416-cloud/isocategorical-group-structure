@@ -413,254 +413,317 @@ Cocycle_C4xC4_3 := function(g, h)
 end;
 
 
-#C2xC2の2-cocycle（2つ）を構成する
-#groupa,groupbで生成元としてのa,bを表している
-#non-degなのはCocycle_C2xC2_1
-groupa:=GeneratorsOfGroup(C2xC2)[1];
-groupb:=GeneratorsOfGroup(C2xC2)[2];
-Cycle2x2:=function(g)
-local j,k;
-for j in [0,1] do
-for k in [0,1] do
-if g=groupa^j*groupb^k then
-return[j,k];
-fi;
-od;
-od;
+# Assign generators of C2xC2 to groupa and groupb
+groupa := GeneratorsOfGroup(C2xC2)[1];
+groupb := GeneratorsOfGroup(C2xC2)[2];
+
+# Helper function to decompose element g into exponents [j, k] such that g = a^j * b^k
+Cycle2x2 := function(g)
+    local j, k;
+    for j in [0, 1] do
+        for k in [0, 1] do
+            if g = groupa^j * groupb^k then
+                return [j, k];
+            fi;
+        od;
+    od;
 end;
 
-Cocycle_C2xC2_0:=function(g,h)
-local want,list1,list2;
-list1:=Cycle2x2(g);
-list2:=Cycle2x2(h);
-want:= E(2)^(list1[1]*list2[2]*0);
-return want;
+# Trivial 2-cocycle for C2xC2 (constant value 1)
+Cocycle_C2xC2_0 := function(g, h)
+    local want, list1, list2;
+    list1 := Cycle2x2(g);
+    list2 := Cycle2x2(h);
+    want := E(2)^(list1[1] * list2[2] * 0);
+    return want;
 end;
 
-Cocycle_C2xC2_1:=function(g,h)
-local want,list1,list2;
-list1:=Cycle2x2(g);
-list2:=Cycle2x2(h);
-want:= E(2)^(list1[1]*list2[2]*1);
-return want;
+# Non-degenerate 2-cocycle for C2xC2
+Cocycle_C2xC2_1 := function(g, h)
+    local want, list1, list2;
+    list1 := Cycle2x2(g);
+    list2 := Cycle2x2(h);
+    want := E(2)^(list1[1] * list2[2] * 1);
+    return want;
 end;
 
 
+# Purpose: Returns the 6-bit binary representation of n as a list
+Binary64 := function(n)
+    local list, k;
+    
+    # Initialize a list of length 6 with zeros
+    list := [0, 0, 0, 0, 0, 0];
+    
+    # Iterate 6 times to extract each bit
+    for k in [1..6] do
+        # Store the remainder (bit) starting from the last index
+        list[7-k] := n mod 2;
+        # Perform integer division by 2 to move to the next bit
+        n := (n - n mod 2) / 2;
+    od;
+    
+    return list;
+end;
 
-#C2xC2xC2xC2のnon-degな2-cocycle(28個)を構成する。
-Binary64:=function(n)
-local list,k;
-list:=[0,0,0,0,0,0];
-for k in [1..6] do
-list[7-k]:= n mod 2;
-n:=(n- n mod 2)/2;
-od;
-return list;
-end;		#Binary64は63までの二進数展開をリストとして返す。
 
-List01x6:=[];
+# Initialize an empty list to store binary sequences
+List01x6 := [];
+
+
+# Iterate through integers from 0 to 63 to generate all 6-bit combinations
 for k in [0..63] do
-Add(List01x6,Binary64(k));
-od;		#List01x6は6つの0,1の数字組み合わせのリスト。
+    # Call Binary64 for each k and append the resulting bit-list to List01x6
+    Add(List01x6, Binary64(k));
+od;
 
-MatrixesC2xC2xC2xC2:=[];
+
+# Initialize an empty list to store full-rank matrices
+MatrixesC2xC2xC2xC2 := [];
+
+# Iterate through each 6-bit combination to form a 4x4 alternating matrix
 for list in List01x6 do
-matrix:=
-[
-[0,list[1],list[2],list[3]],
-[list[1],0,list[4],list[5]],
-[list[2],list[4],0,list[6]],
-[list[3],list[5],list[6],0]
-];
-if RankMatrix(matrix)=4 then
-Add(MatrixesC2xC2xC2xC2,matrix);
-fi;
-od;		#MatrixesC2xC2xC2xC2はnon-degな2-cocycleの元になる行列の集まり
+    # Construct a symmetric matrix with zeros on the diagonal (alternating in GF(2))
+    # The 6 bits represent the upper/lower triangular entries: (1,2), (1,3), (1,4), (2,3), (2,4), (3,4)
+    matrix := [
+        [0, list[1], list[2], list[3]],
+        [list[1], 0, list[4], list[5]],
+        [list[2], list[4], 0, list[6]],
+        [list[3], list[5], list[6], 0]
+    ];
 
-ChangeMatrix:=function(matrix)
-local i,j,wantmat;
-wantmat:=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
-for i in [1..4] do
-for j in [1..4] do
-if matrix[i][j] = 0 then
-wantmat[i][j]:=1;
-elif matrix[i][j] = 1 then
-wantmat[i][j]:=-1;
-fi;
+    # Check if the matrix is non-degenerate (full rank for a 4x4 matrix is 4)
+    if RankMatrix(matrix) = 4 then
+        Add(MatrixesC2xC2xC2xC2, matrix);
+    fi;
 od;
-od;
-return wantmat;
-end;		#ChangeMatrixは加法による行列表示を積による行列表示に戻す
 
 
-groupc:=GeneratorsOfGroup(C2xC2xC2xC2)[1];
-groupd:=GeneratorsOfGroup(C2xC2xC2xC2)[2];
-groupe:=GeneratorsOfGroup(C2xC2xC2xC2)[3];
-groupf:=GeneratorsOfGroup(C2xC2xC2xC2)[4];
+# Argument: matrix (4x4 matrix with entries 0 or 1)
+# Purpose: Converts an additive matrix (0, 1) to a multiplicative matrix (1, -1)
+ChangeMatrix := function(matrix)
+    local i, j, wantmat;
+    
+    # Initialize a 4x4 zero matrix
+    wantmat := [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
+    
+    # Iterate through each entry of the matrix
+    for i in [1..4] do
+        for j in [1..4] do
+            # Map the additive identity (0) to the multiplicative identity (1)
+            if matrix[i][j] = 0 then
+                wantmat[i][j] := 1;
+            # Map the non-trivial element (1) to the non-trivial root of unity (-1)
+            elif matrix[i][j] = 1 then
+                wantmat[i][j] := -1;
+            fi;
+        od;
+    od;
+    
+    return wantmat;
+end;
 
 
+# Assign the four generators of the elementary abelian group C2xC2xC2xC2 to individual variables
+groupc := GeneratorsOfGroup(C2xC2xC2xC2)[1];
+groupd := GeneratorsOfGroup(C2xC2xC2xC2)[2];
+groupe := GeneratorsOfGroup(C2xC2xC2xC2)[3];
+groupf := GeneratorsOfGroup(C2xC2xC2xC2)[4];
 
 
-
-
-
-#ObtainedSubgroupsは条件を満たす部分群のリストを返す
+# Argument: G (a group)
+# Purpose: Returns a list of normal subgroups of G isomorphic to C2xC2, C4xC4, or C2xC2xC2xC2
 ObtainedSubgroups := function(G)
-local sub1,sub2,j,k;
-sub1:=[];
-sub2:=[];
-for j in Subgroups(G) do
-if IsNormal(G,j) then
-Add(sub1,j);
-fi;
-od;
-for k in sub1 do
-if
-IsIsomorphicGroup(k,C2xC2) or
-IsIsomorphicGroup(k,C4xC4) or
-IsIsomorphicGroup(k,C2xC2xC2xC2) then
-Add(sub2,k);
-fi;
-od;
-return sub2;
+    local sub1, sub2, j, k;
+    
+    sub1 := [];
+    sub2 := [];
+    
+    # Iterate through all subgroups and collect those that are normal in G
+    for j in Subgroups(G) do
+        if IsNormal(G, j) then
+            Add(sub1, j);
+        fi;
+    od;
+    
+    # Filter the normal subgroups by checking isomorphism to target abelian groups
+    for k in sub1 do
+        if IsIsomorphicGroup(k, C2xC2) or 
+           IsIsomorphicGroup(k, C4xC4) or 
+           IsIsomorphicGroup(k, C2xC2xC2xC2) then
+            Add(sub2, k);
+        fi;
+    od;
+    
+    return sub2;
 end;
 
 
-
-#C2xC2に同型な部分群Nに対し、(1,0)と(0,1)に対応する元を抜き出す
+# Argument: N (a subgroup isomorphic to C2xC2)
+# Purpose: Identifies the elements in N that correspond to the standard generators (groupa, groupb) of C2xC2
 C2xC2GeneratorsOfSubgroup := function(N)
-local iso,gen1,gen2;
-iso:= IsomorphismGroups(C2xC2,N);
-gen1:= Image(iso,groupa);
-gen2:= Image(iso,groupb);
-return [gen1,gen2];
+    local iso, gen1, gen2;
+    
+    # Compute an isomorphism from the reference group C2xC2 to the subgroup N
+    iso := IsomorphismGroups(C2xC2, N);
+    
+    # Map the reference generators to their corresponding images in N
+    gen1 := Image(iso, groupa);
+    gen2 := Image(iso, groupb);
+    
+    # Return the pair of elements representing the (1,0) and (0,1) components
+    return [gen1, gen2];
 end;
 
 
-#C2xC2に同型な部分群Nの埋め込みによる2-cocycleがg不変か調べる
-#GAP中でaとbの区別がつかない問題が発生中。これによりginvの値がまちまちになる。
-#これを回避するため、Gizumikosakiの結果を利用して一意に定める。
-#その必要はないことが分かった
+# Pick the first subgroup that satisfies the criteria from the group Gizumikosaki
+N2 := ObtainedSubgroups(Gizumikosaki)[1];
 
-N2:=ObtainedSubgroups(Gizumikosaki)[1];
-homhom:=IsomorphismGroups(G,Gizumikosaki);
-elementx:=Image(homhom,GeneratorsOfGroup(G)[1]);
-Ax:=[[1,0],[1,1]];
+# Compute an isomorphism between the finitely presented group G and Gizumikosaki
+homhom := IsomorphismGroups(G, Gizumikosaki);
+
+# Map the first generator of G (x) to its corresponding element in Gizumikosaki
+elementx := Image(homhom, GeneratorsOfGroup(G)[1]);
+
+# Define a 2x2 matrix Ax, likely representing a transformation or automorphism
+Ax := [[1, 0], [1, 1]];
 
 
-Checkginv_C2xC2 := function(g,N)
-local i,j,m,n,list1,list2,gen1,gen2;
-gen1:= C2xC2GeneratorsOfSubgroup(N)[1];
-gen2:= C2xC2GeneratorsOfSubgroup(N)[2];
+# Arguments: g (a group element), N (a subgroup isomorphic to C2xC2)
+# Purpose: Determines the 2x2 matrix representing the automorphism of N induced by conjugation by g
+Checkginv_C2xC2 := function(g, N)
+    local i, j, m, n, list1, list2, gen1, gen2;
+    
+    # Retrieve the basis generators of the subgroup N
+    gen1 := C2xC2GeneratorsOfSubgroup(N)[1];
+    gen2 := C2xC2GeneratorsOfSubgroup(N)[2];
 
-for i in [0,1] do
-for j in [0,1] do
-if
-g*gen1*g^-1 = gen1^i * gen2^j  then
-list1:=[i,j];
-fi;
-od;
-od;
+    # Find the image of gen1 under conjugation by g: g*gen1*g^-1 = gen1^i * gen2^j
+    for i in [0, 1] do
+        for j in [0, 1] do
+            if g * gen1 * g^-1 = gen1^i * gen2^j then
+                list1 := [i, j];
+            fi;
+        od;
+    od;
 
-for m in [0,1] do
-for n in [0,1] do
-if
-g*gen2*g^-1 = gen1^m * gen2^n  then
-list2:=[m,n];
-fi;
-od;
-od;
-return [list1,list2];
+    # Find the image of gen2 under conjugation by g: g*gen2*g^-1 = gen1^m * gen2^n
+    for m in [0, 1] do
+        for n in [0, 1] do
+            if g * gen2 * g^-1 = gen1^m * gen2^n then
+                list2 := [m, n];
+            fi;
+        od;
+    od;
+
+    # Return the coefficients as a 2x2 matrix [list1, list2]
+    return [list1, list2];
 end;
 
 
+# Arguments: G (the parent group), N (subgroup isomorphic to C2xC2)
+# Purpose: Checks if the conjugation action of G on N induces non-singular matrices (automorphisms)
+CheckGinv_C2xC2 := function(G, N)
+    local want, list, g, check;
+    
+    # Get the list of generators for group G
+    list := GeneratorsOfGroup(G);
+    want := [];
 
+    # For each generator g, compute the 2x2 matrix representing the conjugation action on N
+    for g in list do
+        Add(want, Checkginv_C2xC2(g, N));
+    od;
 
-#C2xC2に同型な部分群Nの埋め込みによる2-cocycleがG不変か調べる
-CheckGinv_C2xC2 := function(G,N)
-local want,list,g,check;
-list := GeneratorsOfGroup(G);
-want:=[];
+    # Compute the determinant of each matrix and reduce it modulo 2
+    check := List(want, Determinant);
+    check := List(check, i -> i mod 2);
+    
+    # Extract unique values to check consistency
+    check := Set(check);
 
-for g in list do
-Add(want,Checkginv_C2xC2(g,N));
-od;
-
-check:=List(want,Determinant);
-check:=List(check,i-> i mod 2);
-check:=Set(check);
-
-if check=[1] then
-Print(N," is G invariant.");
-
-else
-Print(N," is not G invariant.");
-fi;
+    # If the determinant is always 1, the action consists of invertible transformations (GL(2, 2))
+    if check = [1] then
+        Print(N, " is G invariant.");
+    else
+        Print(N, " is not G invariant.");
+    fi;
 end;
 
 
+# Arguments: G (parent group), N (subgroup isomorphic to C2xC2)
+# Purpose: Returns 1 if the conjugation action of G on N preserves the structure (G-invariant), otherwise 0
+CheckGinv_C2xC2Cal := function(G, N)
+    local want, list, g, check;
 
-#C2xC2に同型な部分群Nの埋め込みによる2-cocycleがG不変か調べる
-CheckGinv_C2xC2Cal := function(G,N)
-local want,list,g,check;
-list := GeneratorsOfGroup(G);
-want:=[];
+    # Retrieve generators of G and initialize the matrix collection
+    list := GeneratorsOfGroup(G);
+    want := [];
 
-for g in list do
-Add(want,Checkginv_C2xC2(g,N));
-od;
+    # Iterate through generators to obtain the 2x2 conjugation matrices acting on N
+    for g in list do
+        Add(want, Checkginv_C2xC2(g, N));
+    od;
 
-check:=List(want,Determinant);
-check:=List(check,i-> i mod 2);
-check:=Set(check);
+    # Compute determinants modulo 2 to check for non-singularity
+    check := List(want, Determinant);
+    check := List(check, i -> i mod 2);
+    check := Set(check);
 
-if
-check=[1] then
-return 1;
-
-else
-return 0;
-fi;
+    # If all generators act as valid automorphisms (det=1), return 1; otherwise, return 0
+    if check = [1] then
+        return 1;
+    else
+        return 0;
+    fi;
 end;
 
 
+# Arguments: N (subgroup isomorphic to C2xC2), g, h (elements of G)
+# Purpose: Computes an element eta(g, h) in N based on the conjugation action matrices of g, h, and gh
+Eta_C2xC2 := function(N, g, h)
+    local gen1, gen2, mat1, mat2, mat3, k, l, m, n, a, b, c, d, p, q, r, s, check1, check2, want1, want2;
 
+    # Retrieve the basis generators of the subgroup N
+    gen1 := C2xC2GeneratorsOfSubgroup(N)[1];
+    gen2 := C2xC2GeneratorsOfSubgroup(N)[2];
 
+    # Get the 2x2 conjugation matrices for g, h, and the product g*h
+    mat1 := Checkginv_C2xC2(g, N);
+    mat2 := Checkginv_C2xC2(h, N);
+    mat3 := Checkginv_C2xC2(g * h, N);
 
-#\eta(g,h)を定める。部分群Nでの\eta(g,h)の値はこれ。
-Eta_C2xC2 := function(N,g,h)
-local gen1,gen2,mat1,mat2,mat3,k,l,m,n,a,b,c,d,p,q,r,s,check1,check2,want1,want2;
+    # Extract coefficients of the matrix for g (mat1)
+    k := mat1[1][1];
+    l := mat1[1][2];
+    m := mat1[2][1];
+    n := mat1[2][2];
 
-gen1:= C2xC2GeneratorsOfSubgroup(N)[1];
-gen2:= C2xC2GeneratorsOfSubgroup(N)[2];
+    # Extract coefficients of the matrix for h (mat2)
+    a := mat2[1][1];
+    b := mat2[1][2];
+    c := mat2[2][1];
+    d := mat2[2][2];
 
-mat1:=Checkginv_C2xC2(g,N);
-mat2:=Checkginv_C2xC2(h,N);
-mat3:=Checkginv_C2xC2(g*h,N);
+    # Extract coefficients of the matrix for g*h (mat3)
+    p := mat3[1][1];
+    q := mat3[1][2];
+    r := mat3[2][1];
+    s := mat3[2][2];
 
-k:=mat1[1][1];
-l:=mat1[1][2];
-m:=mat1[2][1];
-n:=mat1[2][2];
-a:=mat2[1][1];
-b:=mat2[1][2];
-c:=mat2[2][1];
-d:=mat2[2][2];
-p:=mat3[1][1];
-q:=mat3[1][2];
-r:=mat3[2][1];
-s:=mat3[2][2];
+    # Calculate algebraic check values based on the matrix entries
+    check1 := -k*m - a*c*k^2 - b*d*m^2 - 2*b*c*k*m + p*r;
+    check2 := -l*n - a*c*l^2 - b*d*n^2 - 2*b*c*l*n + q*s;
 
-check1:= -k*m -a*c*k^2 -b*d*m^2 -2*b*c*k*m +p*r;
-check2:= -l*n -a*c*l^2 -b*d*n^2 -2*b*c*l*n +q*s;
+    # Determine exponents by halving the check values and taking modulo 2
+    want1 := check1 / 2;
+    want2 := check2 / 2;
 
-want1:= check1 /2;
-want2:= check2 /2;
+    want1 := want1 mod 2;
+    want2 := want2 mod 2;
 
-want1:=want1 mod 2;
-want2:=want2 mod 2;
-
-return gen1^want1 * gen2^want2;
+    # Return the resulting element in N: gen1^want1 * gen2^want2
+    return gen1^want1 * gen2^want2;
 end;
 
 
