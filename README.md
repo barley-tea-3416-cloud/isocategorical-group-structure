@@ -8,3 +8,5 @@ The classification of finite groups under monoidal equivalence is a fundamental 
 - Package 'sonata'
 
 # Usage
+For each verification step, it is recommended to use the groups constructed by Izumi and Kosaki. Detailed information regarding the Izumi–Kosaki groups is provided below.
+ああああああああああああああああああ
