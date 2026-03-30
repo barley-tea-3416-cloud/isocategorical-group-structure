@@ -8,5 +8,9 @@ The classification of finite groups under monoidal equivalence is a fundamental 
 - Package 'sonata'
 
 # Usage
-For each verification step, it is recommended to use the groups constructed by Izumi and Kosaki. Detailed information regarding the Izumi–Kosaki groups is provided below.
-ああああああああああああああああああ
+Verification is performed using Izumi–Kosaki groups. The target groups are identified by the order list `[1, 19, 44, 0, 0, 0, 0]`.
+Within `Sourcecode.g`, the primary group for analysis, `Gizumikosaki`, is extracted as follows:
+```gap
+izumigroups := SmallCategoryCal(64, [1, 19, 44, 0, 0, 0, 0]);
+izumigroups := izumigroups{[2..10]};
+Gizumikosaki := izumigroups[5];
